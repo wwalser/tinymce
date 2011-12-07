@@ -2,7 +2,6 @@
  * editor_plugin_src.js
  *
  * Copyright 2011, Wesley Walser
- * Released under LGPL License.
  */
 
 (function() {
@@ -17,6 +16,14 @@
 		 */
 		
 		init : function(ed, url) {
+			var deferredPlugins = ed.settings.deferred_plugins,
+				each = tinymce.each;
+
+			if (!deferredPlugins) {
+				return;
+			}
+
+			
 		},
 
 		/**
