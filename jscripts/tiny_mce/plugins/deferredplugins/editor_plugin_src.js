@@ -8,7 +8,6 @@
 	var needsInit = 1;
 	tinymce.create('tinymce.plugins.DeferredPluginsPlugin', {
 		DeferredPluginsPlugin : function(ed, url){
-			debugger;
 			this.deferredPlugins = {};
 			this.ed = ed;
 		},
