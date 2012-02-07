@@ -1,14 +1,10 @@
 tinyMCEPopup.requireLangPack();
 
-var action, orgTableWidth, orgTableHeight, dom = tinyMCEPopup.editor.dom;
+var action, orgTableWidth, orgTableHeight, dom = tinyMCEPopup.editor.dom, extend = tinymce.extend;
 
-function insertTable() {
+tinyMCEPopup.tableManager = tm = {};
+tm.insertTableFromForm = function(){
 	var formObj = document.forms[0];
-	var inst = tinyMCEPopup.editor, dom = inst.dom;
-	var cols = 2, rows = 2, border = 0, cellpadding = -1, cellspacing = -1, align, width, height, className, caption, frame, rules;
-	var html = '', capEl, elm;
-	var cellLimit, rowLimit, colLimit;
-
 	tinyMCEPopup.restoreSelection();
 
 	if (!AutoValidator.validate(formObj)) {
@@ -16,79 +12,112 @@ function insertTable() {
 		return false;
 	}
 
+	// Get form data
+	var settings = {
+		cols: formObj.elements['cols'].value,
+		rows: formObj.elements['rows'].value,
+		border: formObj.elements['border'].value != "" ? formObj.elements['border'].value : 0,
+		cellpadding: formObj.elements['cellpadding'].value != "" ? formObj.elements['cellpadding'].value : "",
+		cellspacing: formObj.elements['cellspacing'].value != "" ? formObj.elements['cellspacing'].value : "",
+		align: getSelectValue(formObj, "align"),
+		frame: getSelectValue(formObj, "tframe"),
+		rules: getSelectValue(formObj, "rules"),
+		width: formObj.elements['width'].value,
+		height: formObj.elements['height'].value,
+		bordercolor: formObj.elements['bordercolor'].value,
+		bgcolor: formObj.elements['bgcolor'].value,
+		className: getSelectValue(formObj, "class"),
+		id: formObj.elements['id'].value,
+		summary: formObj.elements['summary'].value,
+		style: formObj.elements['style'].value,
+		dir: formObj.elements['dir'].value,
+		lang: formObj.elements['lang'].value,
+		background: formObj.elements['backgroundimage'].value,
+		caption: formObj.elements['caption'].checked,
+		cellLimit: tinyMCEPopup.getParam('table_cell_limit', false),
+		rowLimit: tinyMCEPopup.getParam('table_row_limit', false),
+		colLimit: tinyMCEPopup.getParam('table_col_limit', false)
+	};
+	tm.insertTable(settings);
+}
+tm.insertTable = function(settings) {
+	var formObj = document.forms[0];
+	var inst = tinyMCEPopup.editor, dom = inst.dom;
+	var defaults = {
+		cols: 2, 
+		rows: 2, 
+		border: 0, 
+		cellpadding: '', 
+		cellspacing: '', 
+		align: '',
+		frame: '',
+		rules: '',
+		width: '',
+		height: '',
+		bordercolor: '',
+		bgcolor: '',
+		className: '',
+		id: '',
+		summary: '',
+		style: '',
+		dir: '',
+		lang: '',
+		background: '',
+		caption: false,
+		cellLimit: false,
+		rowLimit: false,
+		colLimit: false
+	};
+	settings = extend(defaults, settings || {});
+	var html = '', capEl, elm;
+
 	elm = dom.getParent(inst.selection.getNode(), 'table');
 
-	// Get form data
-	cols = formObj.elements['cols'].value;
-	rows = formObj.elements['rows'].value;
-	border = formObj.elements['border'].value != "" ? formObj.elements['border'].value : 0;
-	cellpadding = formObj.elements['cellpadding'].value != "" ? formObj.elements['cellpadding'].value : "";
-	cellspacing = formObj.elements['cellspacing'].value != "" ? formObj.elements['cellspacing'].value : "";
-	align = getSelectValue(formObj, "align");
-	frame = getSelectValue(formObj, "tframe");
-	rules = getSelectValue(formObj, "rules");
-	width = formObj.elements['width'].value;
-	height = formObj.elements['height'].value;
-	bordercolor = formObj.elements['bordercolor'].value;
-	bgcolor = formObj.elements['bgcolor'].value;
-	className = getSelectValue(formObj, "class");
-	id = formObj.elements['id'].value;
-	summary = formObj.elements['summary'].value;
-	style = formObj.elements['style'].value;
-	dir = formObj.elements['dir'].value;
-	lang = formObj.elements['lang'].value;
-	background = formObj.elements['backgroundimage'].value;
-	caption = formObj.elements['caption'].checked;
-
-	cellLimit = tinyMCEPopup.getParam('table_cell_limit', false);
-	rowLimit = tinyMCEPopup.getParam('table_row_limit', false);
-	colLimit = tinyMCEPopup.getParam('table_col_limit', false);
-
 	// Validate table size
-	if (colLimit && cols > colLimit) {
-		tinyMCEPopup.alert(inst.getLang('table_dlg.col_limit').replace(/\{\$cols\}/g, colLimit));
+	if (settings.colLimit && settings.cols > settings.colLimit) {
+		tinyMCEPopup.alert(inst.getLang('table_dlg.col_limit').replace(/\{\$settings.cols\}/g, settings.colLimit));
 		return false;
-	} else if (rowLimit && rows > rowLimit) {
-		tinyMCEPopup.alert(inst.getLang('table_dlg.row_limit').replace(/\{\$rows\}/g, rowLimit));
+	} else if (settings.rowLimit && settings.rows > settings.rowLimit) {
+		tinyMCEPopup.alert(inst.getLang('table_dlg.row_limit').replace(/\{\$settings.rows\}/g, settings.rowLimit));
 		return false;
-	} else if (cellLimit && cols * rows > cellLimit) {
-		tinyMCEPopup.alert(inst.getLang('table_dlg.cell_limit').replace(/\{\$cells\}/g, cellLimit));
+	} else if (settings.cellLimit && settings.cols * settings.rows > settings.cellLimit) {
+		tinyMCEPopup.alert(inst.getLang('table_dlg.cell_limit').replace(/\{\$cells\}/g, settings.cellLimit));
 		return false;
 	}
 
 	// Update table
 	if (action == "update") {
-		dom.setAttrib(elm, 'cellPadding', cellpadding, true);
-		dom.setAttrib(elm, 'cellSpacing', cellspacing, true);
+		dom.setAttrib(elm, 'cellPadding', settings.cellpadding, true);
+		dom.setAttrib(elm, 'cellSpacing', settings.cellspacing, true);
 
-		if (!isCssSize(border)) {
-			dom.setAttrib(elm, 'border', border);
+		if (!isCssSize(settings.border)) {
+			dom.setAttrib(elm, 'border', settings.border);
 		} else {
 			dom.setAttrib(elm, 'border', '');
 		}
 
-		if (border == '') {
+		if (settings.border == '') {
 			dom.setStyle(elm, 'border-width', '');
 			dom.setStyle(elm, 'border', '');
 			dom.setAttrib(elm, 'border', '');
 		}
 
-		dom.setAttrib(elm, 'align', align);
-		dom.setAttrib(elm, 'frame', frame);
-		dom.setAttrib(elm, 'rules', rules);
-		dom.setAttrib(elm, 'class', className);
-		dom.setAttrib(elm, 'style', style);
-		dom.setAttrib(elm, 'id', id);
-		dom.setAttrib(elm, 'summary', summary);
-		dom.setAttrib(elm, 'dir', dir);
-		dom.setAttrib(elm, 'lang', lang);
+		dom.setAttrib(elm, 'align', settings.align);
+		dom.setAttrib(elm, 'frame', settings.frame);
+		dom.setAttrib(elm, 'rules', settings.rules);
+		dom.setAttrib(elm, 'class', settings.className);
+		dom.setAttrib(elm, 'style', settings.style);
+		dom.setAttrib(elm, 'id', settings.id);
+		dom.setAttrib(elm, 'summary', settings.summary);
+		dom.setAttrib(elm, 'dir', settings.dir);
+		dom.setAttrib(elm, 'lang', settings.lang);
 
 		capEl = inst.dom.select('caption', elm)[0];
 
-		if (capEl && !caption)
+		if (capEl && !settings.caption)
 			capEl.parentNode.removeChild(capEl);
 
-		if (!capEl && caption) {
+		if (!capEl && settings.caption) {
 			capEl = elm.ownerDocument.createElement('caption');
 
 			if (!tinymce.isIE)
@@ -97,11 +126,11 @@ function insertTable() {
 			elm.insertBefore(capEl, elm.firstChild);
 		}
 
-		if (width && inst.settings.inline_styles) {
-			dom.setStyle(elm, 'width', width);
+		if (settings.width && inst.settings.inline_styles) {
+			dom.setStyle(elm, 'width', settings.width);
 			dom.setAttrib(elm, 'width', '');
 		} else {
-			dom.setAttrib(elm, 'width', width, true);
+			dom.setAttrib(elm, 'width', settings.width, true);
 			dom.setStyle(elm, 'width', '');
 		}
 
@@ -110,33 +139,33 @@ function insertTable() {
 		dom.setAttrib(elm, 'bgColor', '');
 		dom.setAttrib(elm, 'background', '');
 
-		if (height && inst.settings.inline_styles) {
-			dom.setStyle(elm, 'height', height);
+		if (settings.height && inst.settings.inline_styles) {
+			dom.setStyle(elm, 'height', settings.height);
 			dom.setAttrib(elm, 'height', '');
 		} else {
-			dom.setAttrib(elm, 'height', height, true);
+			dom.setAttrib(elm, 'height', settings.height, true);
 			dom.setStyle(elm, 'height', '');
  		}
 
-		if (background != '')
-			elm.style.backgroundImage = "url('" + background + "')";
+		if (settings.background != '')
+			elm.style.backgroundImage = "url('" + settings.background + "')";
 		else
 			elm.style.backgroundImage = '';
 
-/*		if (tinyMCEPopup.getParam("inline_styles")) {
+		/*if (tinyMCEPopup.getParam("inline_styles")) {
 			if (width != '')
 				elm.style.width = getCSSSize(width);
 		}*/
 
-		if (bordercolor != "") {
-			elm.style.borderColor = bordercolor;
+		if (settings.bordercolor != "") {
+			elm.style.borderColor = settings.bordercolor;
 			elm.style.borderStyle = elm.style.borderStyle == "" ? "solid" : elm.style.borderStyle;
-			elm.style.borderWidth = cssSize(border);
+			elm.style.borderWidth = cssSize(settings.border);
 		} else
 			elm.style.borderColor = '';
 
-		elm.style.backgroundColor = bgcolor;
-		elm.style.height = getCSSSize(height);
+		elm.style.backgroundColor = settings.bgcolor;
+		elm.style.height = getCSSSize(settings.height);
 
 		inst.addVisual();
 
@@ -157,28 +186,28 @@ function insertTable() {
 	// Create new table
 	html += '<table';
 
-	html += makeAttrib('id', id);
-	if (!isCssSize(border)) {
-		html += makeAttrib('border', border);
+	html += makeAttrib('id', settings.id);
+	if (!isCssSize(settings.border)) {
+		html += makeAttrib('border', settings.border);
 	}
 
-	html += makeAttrib('cellpadding', cellpadding);
-	html += makeAttrib('cellspacing', cellspacing);
+	html += makeAttrib('cellpadding', settings.cellpadding);
+	html += makeAttrib('cellspacing', settings.cellspacing);
 	html += makeAttrib('data-mce-new', '1');
 
-	if (width && inst.settings.inline_styles) {
-		if (style)
-			style += '; ';
+	if (settings.width && inst.settings.inline_styles) {
+		if (settings.style)
+			settings.style += '; ';
 
 		// Force px
-		if (/^[0-9\.]+$/.test(width))
-			width += 'px';
+		if (/^[0-9\.]+$/.test(settings.width))
+			settings.width += 'px';
 
-		style += 'width: ' + width;
+		settings.style += 'width: ' + settings.width;
 	} else
-		html += makeAttrib('width', width);
+		html += makeAttrib('width', settings.width);
 
-/*	if (height) {
+	/*if (height) {
 		if (style)
 			style += '; ';
 
@@ -188,27 +217,27 @@ function insertTable() {
 	//html += makeAttrib('height', height);
 	//html += makeAttrib('bordercolor', bordercolor);
 	//html += makeAttrib('bgcolor', bgcolor);
-	html += makeAttrib('align', align);
-	html += makeAttrib('frame', frame);
-	html += makeAttrib('rules', rules);
-	html += makeAttrib('class', className);
-	html += makeAttrib('style', style);
-	html += makeAttrib('summary', summary);
-	html += makeAttrib('dir', dir);
-	html += makeAttrib('lang', lang);
+	html += makeAttrib('align', settings.align);
+	html += makeAttrib('frame', settings.frame);
+	html += makeAttrib('rules', settings.rules);
+	html += makeAttrib('class', settings.className);
+	html += makeAttrib('style', settings.style);
+	html += makeAttrib('summary', settings.summary);
+	html += makeAttrib('dir', settings.dir);
+	html += makeAttrib('lang', settings.lang);
 	html += '>';
 
-	if (caption) {
+	if (settings.caption) {
 		if (!tinymce.isIE)
 			html += '<caption><br data-mce-bogus="1"/></caption>';
 		else
 			html += '<caption></caption>';
 	}
 
-	for (var y=0; y<rows; y++) {
+	for (var y=0; y<settings.rows; y++) {
 		html += "<tr>";
 
-		for (var x=0; x<cols; x++) {
+		for (var x=0; x<settings.cols; x++) {
 			if (!tinymce.isIE)
 				html += '<td><br data-mce-bogus="1"/></td>';
 			else
@@ -263,32 +292,9 @@ function insertTable() {
 	inst.execCommand('mceEndUndoLevel');
 
 	tinyMCEPopup.close();
-}
+};
 
-function makeAttrib(attrib, value) {
-	var formObj = document.forms[0];
-	var valueElm = formObj.elements[attrib];
-
-	if (typeof(value) == "undefined" || value == null) {
-		value = "";
-
-		if (valueElm)
-			value = valueElm.value;
-	}
-
-	if (value == "")
-		return "";
-
-	// XML encode it
-	value = value.replace(/&/g, '&amp;');
-	value = value.replace(/\"/g, '&quot;');
-	value = value.replace(/</g, '&lt;');
-	value = value.replace(/>/g, '&gt;');
-
-	return ' ' + attrib + '="' + value + '"';
-}
-
-function init() {
+tm.init = function() {
 	tinyMCEPopup.resizeToInnerSize();
 
 	document.getElementById('backgroundimagebrowsercontainer').innerHTML = getBrowserHTML('backgroundimagebrowser','backgroundimage','image','table');
@@ -381,6 +387,29 @@ function init() {
 		formObj.cols.disabled = true;
 		formObj.rows.disabled = true;
 	}
+};
+
+function makeAttrib(attrib, value) {
+	var formObj = document.forms[0];
+	var valueElm = formObj.elements[attrib];
+
+	if (typeof(value) == "undefined" || value == null) {
+		value = "";
+
+		if (valueElm)
+			value = valueElm.value;
+	}
+
+	if (value == "")
+		return "";
+
+	// XML encode it
+	value = value.replace(/&/g, '&amp;');
+	value = value.replace(/\"/g, '&quot;');
+	value = value.replace(/</g, '&lt;');
+	value = value.replace(/>/g, '&gt;');
+
+	return ' ' + attrib + '="' + value + '"';
 }
 
 function changedSize() {
@@ -485,4 +514,4 @@ function changedStyle() {
 	}
 }
 
-tinyMCEPopup.onInit.add(init);
+tinyMCEPopup.onInit.add(tm.init);
