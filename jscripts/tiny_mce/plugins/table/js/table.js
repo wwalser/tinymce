@@ -1,6 +1,7 @@
+(function(){
 tinyMCEPopup.requireLangPack();
 
-var action, orgTableWidth, orgTableHeight, dom = tinyMCEPopup.editor.dom, extend = tinymce.extend;
+var action, tm, orgTableWidth, orgTableHeight, dom = tinyMCEPopup.editor.dom, extend = tinymce.extend;
 
 tinyMCEPopup.tableManager = tm = {};
 tm.insertTableFromForm = function(){
@@ -38,10 +39,10 @@ tm.insertTableFromForm = function(){
 		rowLimit: tinyMCEPopup.getParam('table_row_limit', false),
 		colLimit: tinyMCEPopup.getParam('table_col_limit', false)
 	};
-	tm.insertTable(settings);
+	tinyMCEPopup.close();
+	return tm.insertTable(settings);
 }
 tm.insertTable = function(settings) {
-	var formObj = document.forms[0];
 	var inst = tinyMCEPopup.editor, dom = inst.dom;
 	var defaults = {
 		cols: 2, 
@@ -176,10 +177,9 @@ tm.insertTable = function(settings) {
 		inst.execCommand('mceEndUndoLevel');
 
 		// Repaint if dimensions changed
-		if (formObj.width.value != orgTableWidth || formObj.height.value != orgTableHeight)
+		if (settings.width != orgTableWidth || settings.height != orgTableHeight)
 			inst.execCommand('mceRepaint');
 
-		tinyMCEPopup.close();
 		return true;
 	}
 
@@ -290,8 +290,6 @@ tm.insertTable = function(settings) {
 
 	inst.addVisual();
 	inst.execCommand('mceEndUndoLevel');
-
-	tinyMCEPopup.close();
 };
 
 tm.init = function() {
@@ -390,18 +388,9 @@ tm.init = function() {
 };
 
 function makeAttrib(attrib, value) {
-	var formObj = document.forms[0];
-	var valueElm = formObj.elements[attrib];
-
-	if (typeof(value) == "undefined" || value == null) {
-		value = "";
-
-		if (valueElm)
-			value = valueElm.value;
-	}
-
-	if (value == "")
+	if (!value) {
 		return "";
+	}
 
 	// XML encode it
 	value = value.replace(/&/g, '&amp;');
@@ -515,3 +504,5 @@ function changedStyle() {
 }
 
 tinyMCEPopup.onInit.add(tm.init);
+
+})();

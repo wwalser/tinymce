@@ -1,0 +1,73 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<title>Unit tests for the Table plugin</title>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<link rel="stylesheet" href="http://code.jquery.com/qunit/qunit-git.css" type="text/css" />
+<script src="http://code.jquery.com/qunit/qunit-git.js"></script>
+<script src="qunit/connector.js"></script>
+<script type="text/javascript" src="qunit/runner.js"></script>
+<script type="text/javascript" src="js/utils.js"></script>
+<script type="text/javascript" src="js/tiny_mce_loader.js"></script>
+</head>
+<body>
+<script type="text/javascript">
+var editor;
+
+QUnit.config.reorder = false;
+QUnit.config.autostart = false;
+
+module("Table plugin", {
+	autostart: false
+});
+
+test('insertTable works with defaults.', function(){
+	var dom = editor.dom,
+		table;
+	tinyMCEPopup.tableManager.insertTable();
+	table = dom.select('table')[0];
+	equal(dom.select('tr', table).length, 2, "Two rows");
+	equal(dom.select('td', table).length, 4, "Four columns");
+});
+
+test('Caret lands correctly after undo of table insertion.', function(){
+	var startingBookmark = {start: [1, 0, 0], end: [3, 0, 0]};
+	editor.setContent('<p>text</p>');
+	editor.selection.moveToBookmark(startingBookmark);
+	
+	tinyMCEPopup.tableManager.insertTable();
+	editor.undoManager.undo();
+
+	deepEqual(startingBookmark, editor.selection.getBookmark(2), 'bookmark should have been set correctly by undo');
+});
+
+tinyMCE.init({
+	mode : "exact",
+	elements : "elm1",
+	theme : "advanced",
+	add_unload_trigger : false,
+	init_instance_callback : function(ed) {
+		var scriptLoader = new tinymce.dom.ScriptLoader(),
+			noOp = function(){};
+		editor = ed;
+		
+		window.tinyMCEPopup = {requireLangPack: noOp, editor: ed, onInit: {add: noOp}};
+		scriptLoader.add('../jscripts/tiny_mce/plugins/table/js/table.js');
+		scriptLoader.loadQueue(QUnit.start);
+	}
+});
+</script>
+
+	<h1 id="qunit-header">Unit tests for the Table plugin</h1>
+	<h2 id="qunit-banner"></h2>
+	<div id="qunit-testrunner-toolbar"></div>
+	<h2 id="qunit-userAgent"></h2>
+	<ol id="qunit-tests"></ol>
+
+	<textarea id="elm1" name="elm1"></textarea>
+	<div>
+		<a href="javascript:alert(tinymce.EditorManager.get('elm1').getContent({format : 'raw'}));">[getRawContents]</a>
+		<a href="javascript:alert(tinymce.EditorManager.get('elm1').getContent());">[getContents]</a>
+	</div>
+</body>
+</html>
